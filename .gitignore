@@ -1,0 +1,33 @@
+# 영상·프레임은 GitHub에 올리지 않음 (공유 드라이브에만)
+*.mp4
+*.mov
+*.MOV
+*.MP4
+*.avi
+*.mkv
+*.jpg
+*.jpeg
+*.png
+frames/
+
+# API 키
+.env
+
+# 로컬 DB·모델 캐시
+chroma_db/
+*.sqlite3
+.cache/
+
+# 파이썬
+.venv/
+venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 실행할 때 생기는 작업 파일 (결과로 남길 것은 results/에 복사)
+events.json

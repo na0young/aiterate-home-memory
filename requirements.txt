@@ -1,0 +1,10 @@
+opencv-python
+numpy
+ollama
+chromadb
+sentence-transformers
+scikit-learn
+fastapi
+uvicorn
+python-dotenv
+google-genai
