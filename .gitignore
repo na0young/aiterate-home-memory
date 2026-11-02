@@ -31,3 +31,8 @@ Thumbs.db
 
 # 실행할 때 생기는 작업 파일 (결과로 남길 것은 results/에 복사)
 events.json
+
+# 테스트·린트 캐시, 샘플 테스트 결과
+.pytest_cache/
+.ruff_cache/
+data/outputs/
