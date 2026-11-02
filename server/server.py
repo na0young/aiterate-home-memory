@@ -12,7 +12,7 @@ from datetime import datetime
 from typing import Optional
 
 from fastapi import FastAPI
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 from retrieval.search import KST, Embedder, EventIndex, event_text, get_time_range, load_events, parse_now
 
@@ -35,14 +35,38 @@ RULES = (
     "- 기록에 없는 내용을 추측하지 마세요."
 )
 
+
 app = FastAPI(title="픽셀 없는 홈 메모리", description="질문하면 기록을 근거로 답합니다.")
 index = EventIndex(load_events(), Embedder(EMB))
 
-
 class AskIn(BaseModel):
-    question: str = "오늘 아침에 엄마 약 드셨어?"
-    now: Optional[str] = "2026-10-27 12:30"  # 비우면 현재 시각
-
+    # 질문 필수 입력 (앞뒤 빈칸은 지우고 1~1000자)
+    question: str = Field(min_length=1, max_length=1000, examples=["오늘 아침에 엄마 약 드셨어?"])
+ 
+    # 시각을 입력하지 않으면 None -> /ask에서 현재 시각으로 
+    now: Optional[str] = Field(default=None, examples=["2026-10-27 12:30"])
+ 
+    @field_validator("question", mode="before")
+    @classmethod
+    def clean_question(cls, value):
+        if isinstance(value, str):
+            return value.strip()
+        return value
+ 
+    @field_validator("now")
+    @classmethod
+    def check_now(cls, value):
+        if value is None or not value.strip():
+            return None
+ 
+        value = value.strip()
+ 
+        try:
+            parse_now(value)
+        except ValueError:
+            raise ValueError("시각은 '2026-10-27 21:00' 형식으로 입력해주세요.")
+ 
+        return value
 
 def generate(prompt):
     """-> (answer, model)"""
@@ -56,6 +80,7 @@ def generate(prompt):
     resp = ollama.chat(model=LLM_MODEL, messages=[{"role": "user", "content": prompt}],
                        options={"temperature": 0})
     return resp["message"]["content"].strip(), LLM_MODEL
+
 
 
 @app.post("/ask")
@@ -90,3 +115,14 @@ def ask(body: AskIn):
         "model": model,
         "elapsed_sec": round(time.perf_counter() - t0, 2),
     }
+
+@app.get("/health")
+def health():
+    return {
+        "status": "ok",
+        "event_count": len(index.events),
+    }
+
+@app.get("/events")
+def list_events():
+    return list(index.events.values())
