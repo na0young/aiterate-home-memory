@@ -1,0 +1,24 @@
+"""환경변수와 실행 상수를 한곳에서 읽는다."""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+load_dotenv(PROJECT_ROOT / ".env")
+
+OLLAMA_HOST: str = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+VLM_MODEL: str = os.getenv("VLM_MODEL", "gemma4:e4b")
+# 768에서는 약통·알약이 작게 보여서 1280으로 올렸다 (mini_demo 실험 결과)
+FRAME_MAX_SIDE: int = int(os.getenv("FRAME_MAX_SIDE", "1280"))
+FRAME_GAP_SEC: float = float(os.getenv("FRAME_GAP_SEC", "1"))
+LLM_MODEL: str = os.getenv("LLM_MODEL", VLM_MODEL)  # ask 답변용
+EMB_MODEL: str = os.getenv("EMB_MODEL", "bge-m3")  # ask 검색용
+EVENTS_DB: Path = PROJECT_ROOT / "events.json"
+WARMUP_RUNS: int = int(os.getenv("WARMUP_RUNS", "1"))
+TIMING_RUNS: int = int(os.getenv("TIMING_RUNS", "3"))
+MAX_VLM_RETRIES: int = 2
