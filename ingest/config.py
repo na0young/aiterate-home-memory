@@ -13,7 +13,6 @@ load_dotenv(PROJECT_ROOT / ".env")
 
 OLLAMA_HOST: str = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 VLM_MODEL: str = os.getenv("VLM_MODEL", "gemma4:e4b")
-# 768에서는 약통·알약이 작게 보여서 1280으로 올렸다 (mini_demo 실험 결과)
 FRAME_MAX_SIDE: int = int(os.getenv("FRAME_MAX_SIDE", "1280"))
 FRAME_GAP_SEC: float = float(os.getenv("FRAME_GAP_SEC", "1"))
 LLM_MODEL: str = os.getenv("LLM_MODEL", VLM_MODEL)  # ask 답변용

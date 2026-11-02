@@ -9,8 +9,8 @@ import time
 from pathlib import Path
 
 from ingest.config import PROJECT_ROOT, TIMING_RUNS, WARMUP_RUNS
-from ingest.mini_demo import describe_frame
 from ingest.schemas import FrameResult
+from ingest.vlm import describe_frame
 
 
 def main() -> int:
