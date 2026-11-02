@@ -124,6 +124,29 @@ class EventIndex:
         return [(self.ids[i], float(scores[i])) for i in top]
 
 
+# 답없음 판정 (검색 단계)
+# 기록에 없는 일을 물어도 검색은 항상 상위 k개를 돌려준다 ("오늘 손님 왔어?" -> 물 마시기 기록).
+# 관련 기록이 있으면 1등 점수가 높거나 1등이 2등보다 확실히 앞선다.
+# 관련 기록이 없으면 점수가 고르게 낮다 (1등과 2등 차이가 거의 없음).
+# -> 1등 점수 >= top_min 이거나, 1등-2등 차이 >= gap_min 이면 "답 있음"
+# 점수 범위가 임베딩마다 달라서 기준값도 임베딩별로 따로 정한다 (eval/eval_answerable.py로 측정).
+ANSWERABLE_RULE = {
+    "tfidf": {"top_min": 0.60, "gap_min": 0.02},
+    # "kure": eval_answerable.py --emb kure 실행 후 출력된 추천값으로 채우기
+}
+
+
+def is_answerable(hits, top_min, gap_min):
+    """hits: search() 결과 [(event_id, score), ...] -> (답 있음 여부, 이유)"""
+    if not hits:
+        return False, "해당 시간에 기록 없음"
+    top = hits[0][1]
+    gap = top - hits[1][1] if len(hits) > 1 else top
+    if top >= top_min or gap >= gap_min:
+        return True, f"관련 기록 있음 (1등 {top:.2f}, 2등과 차이 {gap:.2f})"
+    return False, f"관련 기록 없음 (1등 {top:.2f}, 2등과 차이 {gap:.2f})"
+
+
 def timed(fn, *args, **kw):
     t0 = time.perf_counter()
     out = fn(*args, **kw)
