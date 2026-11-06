@@ -35,6 +35,19 @@ class FrameResult(BaseModel):
     observed: bool
 
 
+class FrameRecord(BaseModel):
+    """프레임 1장의 처리 기록. frames/<영상>.jsonl 한 줄이며 팀 공통 형식은 아니다."""
+
+    video_id: str
+    room: Room
+    video_start: str  # 영상이 시작된 가상 시각 'YYYY-MM-DD HH:MM'
+    t_sec: float  # 영상 안에서 이 프레임의 시각(초)
+    ok: bool  # False면 VLM 응답이 형식에 끝내 맞지 않아 결과가 없음
+    attempts: int  # 시도 횟수 (1이면 재시도 없이 성공)
+    elapsed_sec: float
+    result: FrameResult | None = None
+
+
 class Event(BaseModel):
     """검색·서버에서 쓰는 팀 공통 이벤트 형식."""
 
