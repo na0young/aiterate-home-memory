@@ -9,6 +9,7 @@ import os
 import re
 import time
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI
@@ -27,6 +28,11 @@ LLM_MODEL = os.getenv("LLM_MODEL", "gemma4:e4b")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
 TOP_K = 5
 
+#어떤 이벤트 파일로 답할건지 
+ROOT = Path(__file__).resolve().parents[1]
+EVENTS_FILE = os.getenv("EVENTS", "data/gold_dev.jsonl")
+TIME_FILTER = os.getenv("TIME_FILTER", "on") != "off"  # off면 시간 범위 무시하고 검색
+
 RULES = (
     "당신은 집 안 기록을 보고 답하는 도우미입니다. 아래 [기록]만 근거로 한국어로 짧게 답하세요.\n"
     "- 근거로 쓴 기록 번호를 [E1003]처럼 붙이세요.\n"
@@ -37,7 +43,8 @@ RULES = (
 
 
 app = FastAPI(title="픽셀 없는 홈 메모리", description="질문하면 기록을 근거로 답합니다.")
-index = EventIndex(load_events(), Embedder(EMB))
+#index = EventIndex(load_events(), Embedder(EMB))
+index = EventIndex(load_events(ROOT / EVENTS_FILE), Embedder(EMB))
 
 class AskIn(BaseModel):
     # 질문 필수 입력 (앞뒤 빈칸은 지우고 1~1000자)
@@ -88,7 +95,8 @@ def ask(body: AskIn):
     t0 = time.perf_counter()
     now = parse_now(body.now) if body.now else datetime.now(KST)
     lo, hi = get_time_range(body.question, now)
-    hits = index.search(body.question, k=TOP_K, time_range=(lo, hi))
+    #hits = index.search(body.question, k=TOP_K, time_range=(lo, hi))
+    hits = index.search(body.question, k=TOP_K, time_range=(lo, hi) if TIME_FILTER else None)  # 시간 범위 무시하고 검색
     found = [{"event_id": i, "score": round(s, 3), "text": event_text(index.events[i]),
               "time": index.events[i]["start_text"]} for i, s in hits]
 
@@ -103,7 +111,8 @@ def ask(body: AskIn):
             answer, model = generate(prompt)
         except Exception as e:  # LLM 연결 실패해도 검색 결과는 반환
             answer, model = f"(답변 모델 연결 안 됨: {type(e).__name__}) 검색된 근거만 표시", None
-        cited = sorted(set(re.findall(r"E\d{4}", answer)))
+        #cited = sorted(set(re.findall(r"E\d{4}", answer)))
+        cited = sorted(set(re.findall(r"E\d{4}(?:-\d+)?", answer)))
 
     return {
         "question": body.question,
@@ -121,6 +130,8 @@ def health():
     return {
         "status": "ok",
         "event_count": len(index.events),
+        "events_file": EVENTS_FILE,
+        "time_filter": TIME_FILTER,
     }
 
 @app.get("/events")
